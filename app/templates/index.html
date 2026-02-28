@@ -4,254 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume Parser</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --success: #16a34a;
-            --danger: #dc2626;
-            --tag-bg: #eef2ff;
-            --tag-text: #4338ca;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-        }
-
-        .container { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
-
-        h1 {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 0.25rem;
-            color: var(--primary);
-        }
-
-        .subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            margin-bottom: 2rem;
-        }
-
-        /* Upload Section */
-        .upload-section {
-            background: var(--card);
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 2.5rem;
-            text-align: center;
-            margin-bottom: 2rem;
-            transition: border-color 0.2s;
-        }
-
-        .upload-section:hover { border-color: var(--primary); }
-
-        .upload-section.dragover {
-            border-color: var(--primary);
-            background: var(--tag-bg);
-        }
-
-        .upload-icon { font-size: 3rem; margin-bottom: 0.5rem; }
-
-        .upload-section p { color: var(--text-muted); margin-bottom: 1rem; }
-
-        .btn {
-            display: inline-block;
-            padding: 0.6rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
-
-        .btn:active { transform: scale(0.97); }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover { background: var(--primary-hover); }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-            padding: 0.35rem 0.75rem;
-            font-size: 0.8rem;
-        }
-
-        .btn-danger:hover { background: #b91c1c; }
-
-        #file-input { display: none; }
-
-        .file-name {
-            margin-top: 0.75rem;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        /* Search Section */
-        .search-section {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .search-section input {
-            flex: 1;
-            padding: 0.6rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.95rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .search-section input:focus { border-color: var(--primary); }
-
-        /* Status Messages */
-        .status {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            display: none;
-            font-weight: 500;
-        }
-
-        .status.success { display: block; background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
-        .status.error   { display: block; background: #fef2f2; color: var(--danger);  border: 1px solid #fecaca; }
-        .status.loading  { display: block; background: #eef2ff; color: var(--primary); border: 1px solid #c7d2fe; }
-
-        /* Candidate Cards */
-        .candidate-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-
-        .candidate-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-
-        .candidate-name {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .candidate-meta {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        .candidate-meta span { margin-right: 1rem; }
-
-        .section-title {
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin: 1rem 0 0.5rem;
-        }
-
-        .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-
-        .tag {
-            display: inline-block;
-            padding: 0.2rem 0.6rem;
-            background: var(--tag-bg);
-            color: var(--tag-text);
-            border-radius: 999px;
-            font-size: 0.78rem;
-            font-weight: 500;
-        }
-
-        .tag.tool { background: #fef3c7; color: #92400e; }
-        .tag.database { background: #dcfce7; color: #166534; }
-        .tag.soft { background: #fce7f3; color: #9d174d; }
-
-        .edu-item, .exp-item {
-            padding: 0.5rem 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.9rem;
-        }
-
-        .edu-item:last-child, .exp-item:last-child { border-bottom: none; }
-
-        .edu-degree, .exp-title { font-weight: 600; }
-        .edu-institution, .exp-company { color: var(--text-muted); }
-        .exp-duration { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
-        .exp-desc { font-size: 0.85rem; margin-top: 0.25rem; }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-muted);
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 1rem;
-            height: 1rem;
-            border: 2px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            margin-right: 0.5rem;
-            vertical-align: middle;
-        }
-
         @keyframes spin { to { transform: rotate(360deg); } }
+        .dragover { border-color: #4f46e5 !important; background: #eef2ff !important; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>📄 Resume Parser</h1>
-        <p class="subtitle">Upload a resume (PDF or DOCX) to extract candidate details automatically</p>
+<body class="bg-slate-50 text-slate-800 leading-relaxed font-sans">
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <h1 class="text-center text-3xl font-bold text-indigo-600 mb-1">📄 Resume Parser</h1>
+        <p class="text-center text-slate-500 mb-8">Upload a resume (PDF or DOCX) to extract candidate details automatically</p>
 
         <!-- Upload Area -->
-        <div class="upload-section" id="drop-zone">
-            <div class="upload-icon">⬆️</div>
-            <p>Drag & drop a resume here, or click to browse</p>
-            <input type="file" id="file-input" accept=".pdf,.docx">
-            <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+        <div id="drop-zone"
+             class="bg-white border-2 border-dashed border-slate-200 rounded-xl p-10 text-center mb-8
+                    transition-colors hover:border-indigo-600">
+            <div class="text-5xl mb-2">⬆️</div>
+            <p class="text-slate-500 mb-4">Drag & drop a resume here, or click to browse</p>
+            <input type="file" id="file-input" accept=".pdf,.docx" class="hidden">
+            <button onclick="document.getElementById('file-input').click()"
+                    class="inline-block px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg
+                           hover:bg-indigo-700 active:scale-[0.97] transition">
                 Choose File
             </button>
-            <div class="file-name" id="file-name"></div>
-            <div style="margin-top: 1rem;">
-                <button class="btn btn-primary" id="upload-btn" style="display:none" onclick="uploadResume()">
+            <div id="file-name" class="mt-3 text-sm text-slate-500"></div>
+            <div class="mt-4">
+                <button id="upload-btn" onclick="uploadResume()" style="display:none"
+                        class="inline-block px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg
+                               hover:bg-indigo-700 active:scale-[0.97] transition">
                     Parse Resume
                 </button>
             </div>
         </div>
 
         <!-- Status -->
-        <div class="status" id="status"></div>
+        <div id="status" class="hidden rounded-lg p-4 mb-6 font-medium"></div>
 
         <!-- Search -->
-        <div class="search-section">
+        <div class="flex gap-3 mb-6">
             <input type="text" id="search-input" placeholder="Search by name, email, or skill..."
-                   onkeyup="handleSearch(event)">
-            <button class="btn btn-primary" onclick="searchCandidates()">Search</button>
+                   onkeyup="handleSearch(event)"
+                   class="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg text-sm
+                          outline-none focus:border-indigo-600 transition">
+            <button onclick="searchCandidates()"
+                    class="px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg
+                           hover:bg-indigo-700 active:scale-[0.97] transition">
+                Search
+            </button>
         </div>
 
         <!-- Results -->
@@ -287,11 +86,20 @@
         }
 
         function setStatus(type, msg) {
-            statusDiv.className = 'status ' + type;
-            statusDiv.innerHTML = (type === 'loading' ? '<span class="spinner"></span>' : '') + msg;
+            statusDiv.className = 'rounded-lg p-4 mb-6 font-medium border';
+            const styles = {
+                success: 'bg-green-50 text-green-600 border-green-200',
+                error:   'bg-red-50 text-red-600 border-red-200',
+                loading: 'bg-indigo-50 text-indigo-600 border-indigo-200'
+            };
+            statusDiv.className += ' ' + (styles[type] || '');
+            const spinner = type === 'loading'
+                ? '<span class="inline-block w-4 h-4 border-2 border-slate-200 border-t-indigo-600 rounded-full mr-2 align-middle" style="animation:spin .6s linear infinite"></span>'
+                : '';
+            statusDiv.innerHTML = spinner + msg;
         }
 
-        function clearStatus() { statusDiv.className = 'status'; statusDiv.innerHTML = ''; }
+        function clearStatus() { statusDiv.className = 'hidden'; statusDiv.innerHTML = ''; }
 
         async function uploadResume() {
             if (!fileInput.files.length) return;
@@ -361,50 +169,57 @@
 
         function renderCandidates(candidates) {
             if (!candidates.length) {
-                listDiv.innerHTML = '<div class="empty-state">No candidates found. Upload a resume to get started!</div>';
+                listDiv.innerHTML = '<div class="text-center py-12 text-slate-500">No candidates found. Upload a resume to get started!</div>';
                 return;
             }
 
+            const tagColor = { tool: 'bg-amber-100 text-amber-800', database: 'bg-green-100 text-green-800', soft: 'bg-pink-100 text-pink-800' };
+            const defaultTag = 'bg-indigo-50 text-indigo-700';
+
             listDiv.innerHTML = candidates.map(c => `
-                <div class="candidate-card">
-                    <div class="candidate-header">
+                <div class="bg-white border border-slate-200 rounded-xl p-6 mb-4 shadow-sm">
+                    <div class="flex justify-between items-start mb-4">
                         <div>
-                            <div class="candidate-name">${esc(c.name || 'Unknown')}</div>
-                            <div class="candidate-meta">
+                            <div class="text-xl font-bold text-slate-800">${esc(c.name || 'Unknown')}</div>
+                            <div class="text-sm text-slate-500 mt-1 space-x-4">
                                 ${c.email ? '<span>📧 ' + esc(c.email) + '</span>' : ''}
                                 ${c.phone ? '<span>📱 ' + esc(c.phone) + '</span>' : ''}
                                 <span>📁 ${esc(c.filename)}</span>
                             </div>
                         </div>
-                        <button class="btn btn-danger" onclick="deleteCandidate(${c.id})">Delete</button>
+                        <button onclick="deleteCandidate(${c.id})"
+                                class="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg
+                                       hover:bg-red-700 active:scale-[0.97] transition">
+                            Delete
+                        </button>
                     </div>
 
                     ${c.skills.length ? `
-                        <div class="section-title">Skills</div>
-                        <div class="tags">
-                            ${c.skills.map(s => `<span class="tag ${s.category || ''}">${esc(s.name)}</span>`).join('')}
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-500 mt-4 mb-2">Skills</div>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${c.skills.map(s => `<span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${tagColor[s.category] || defaultTag}">${esc(s.name)}</span>`).join('')}
                         </div>
                     ` : ''}
 
                     ${c.education.length ? `
-                        <div class="section-title">Education</div>
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-500 mt-4 mb-2">Education</div>
                         ${c.education.map(e => `
-                            <div class="edu-item">
-                                <span class="edu-degree">${esc(e.degree || '')}</span>
-                                ${e.institution ? ' — <span class="edu-institution">' + esc(e.institution) + '</span>' : ''}
-                                ${e.year ? ' <span class="exp-duration">(' + esc(e.year) + ')</span>' : ''}
+                            <div class="py-2 border-b border-slate-200 last:border-b-0 text-sm">
+                                <span class="font-semibold">${esc(e.degree || '')}</span>
+                                ${e.institution ? ' — <span class="text-slate-500">' + esc(e.institution) + '</span>' : ''}
+                                ${e.year ? ' <span class="text-xs text-slate-500 italic">(' + esc(e.year) + ')</span>' : ''}
                             </div>
                         `).join('')}
                     ` : ''}
 
                     ${c.experience.length ? `
-                        <div class="section-title">Experience</div>
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-500 mt-4 mb-2">Experience</div>
                         ${c.experience.map(e => `
-                            <div class="exp-item">
-                                <span class="exp-title">${esc(e.title || '')}</span>
-                                ${e.company ? ' at <span class="exp-company">' + esc(e.company) + '</span>' : ''}
-                                ${e.duration ? '<div class="exp-duration">' + esc(e.duration) + '</div>' : ''}
-                                ${e.description ? '<div class="exp-desc">' + esc(e.description) + '</div>' : ''}
+                            <div class="py-2 border-b border-slate-200 last:border-b-0 text-sm">
+                                <span class="font-semibold">${esc(e.title || '')}</span>
+                                ${e.company ? ' at <span class="text-slate-500">' + esc(e.company) + '</span>' : ''}
+                                ${e.duration ? '<div class="text-xs text-slate-500 italic">' + esc(e.duration) + '</div>' : ''}
+                                ${e.description ? '<div class="text-sm mt-1">' + esc(e.description) + '</div>' : ''}
                             </div>
                         `).join('')}
                     ` : ''}
