@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Parser</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --tag-bg: #eef2ff;
+            --tag-text: #4338ca;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+            color: var(--primary);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: var(--card);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: border-color 0.2s;
+        }
+
+        .upload-section:hover { border-color: var(--primary); }
+
+        .upload-section.dragover {
+            border-color: var(--primary);
+            background: var(--tag-bg);
+        }
+
+        .upload-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+
+        .upload-section p { color: var(--text-muted); margin-bottom: 1rem; }
+
+        .btn {
+            display: inline-block;
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-danger:hover { background: #b91c1c; }
+
+        #file-input { display: none; }
+
+        .file-name {
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Search Section */
+        .search-section {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-section input {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-section input:focus { border-color: var(--primary); }
+
+        /* Status Messages */
+        .status {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+            font-weight: 500;
+        }
+
+        .status.success { display: block; background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
+        .status.error   { display: block; background: #fef2f2; color: var(--danger);  border: 1px solid #fecaca; }
+        .status.loading  { display: block; background: #eef2ff; color: var(--primary); border: 1px solid #c7d2fe; }
+
+        /* Candidate Cards */
+        .candidate-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .candidate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .candidate-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .candidate-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .candidate-meta span { margin-right: 1rem; }
+
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin: 1rem 0 0.5rem;
+        }
+
+        .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            background: var(--tag-bg);
+            color: var(--tag-text);
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+
+        .tag.tool { background: #fef3c7; color: #92400e; }
+        .tag.database { background: #dcfce7; color: #166534; }
+        .tag.soft { background: #fce7f3; color: #9d174d; }
+
+        .edu-item, .exp-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .edu-item:last-child, .exp-item:last-child { border-bottom: none; }
+
+        .edu-degree, .exp-title { font-weight: 600; }
+        .edu-institution, .exp-company { color: var(--text-muted); }
+        .exp-duration { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+        .exp-desc { font-size: 0.85rem; margin-top: 0.25rem; }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 Resume Parser</h1>
+        <p class="subtitle">Upload a resume (PDF or DOCX) to extract candidate details automatically</p>
+
+        <!-- Upload Area -->
+        <div class="upload-section" id="drop-zone">
+            <div class="upload-icon">⬆️</div>
+            <p>Drag & drop a resume here, or click to browse</p>
+            <input type="file" id="file-input" accept=".pdf,.docx">
+            <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                Choose File
+            </button>
+            <div class="file-name" id="file-name"></div>
+            <div style="margin-top: 1rem;">
+                <button class="btn btn-primary" id="upload-btn" style="display:none" onclick="uploadResume()">
+                    Parse Resume
+                </button>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="status" id="status"></div>
+
+        <!-- Search -->
+        <div class="search-section">
+            <input type="text" id="search-input" placeholder="Search by name, email, or skill..."
+                   onkeyup="handleSearch(event)">
+            <button class="btn btn-primary" onclick="searchCandidates()">Search</button>
+        </div>
+
+        <!-- Results -->
+        <div id="candidates-list"></div>
+    </div>
+
+    <script>
+        const dropZone  = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileName  = document.getElementById('file-name');
+        const uploadBtn = document.getElementById('upload-btn');
+        const statusDiv = document.getElementById('status');
+        const listDiv   = document.getElementById('candidates-list');
+
+        // Drag & drop
+        ['dragenter', 'dragover'].forEach(e => {
+            dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.add('dragover'); });
+        });
+        ['dragleave', 'drop'].forEach(e => {
+            dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.remove('dragover'); });
+        });
+        dropZone.addEventListener('drop', ev => {
+            const files = ev.dataTransfer.files;
+            if (files.length) { fileInput.files = files; onFileSelected(); }
+        });
+        fileInput.addEventListener('change', onFileSelected);
+
+        function onFileSelected() {
+            if (fileInput.files.length) {
+                fileName.textContent = '📁 ' + fileInput.files[0].name;
+                uploadBtn.style.display = 'inline-block';
+            }
+        }
+
+        function setStatus(type, msg) {
+            statusDiv.className = 'status ' + type;
+            statusDiv.innerHTML = (type === 'loading' ? '<span class="spinner"></span>' : '') + msg;
+        }
+
+        function clearStatus() { statusDiv.className = 'status'; statusDiv.innerHTML = ''; }
+
+        async function uploadResume() {
+            if (!fileInput.files.length) return;
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            setStatus('loading', 'Parsing resume...');
+            uploadBtn.disabled = true;
+
+            try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (res.ok) {
+                    setStatus('success', '✅ ' + data.message);
+                    fileInput.value = '';
+                    fileName.textContent = '';
+                    uploadBtn.style.display = 'none';
+                    loadCandidates();
+                } else {
+                    setStatus('error', '❌ ' + data.error);
+                }
+            } catch (err) {
+                setStatus('error', '❌ Network error: ' + err.message);
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        }
+
+        async function loadCandidates() {
+            try {
+                const res = await fetch('/api/candidates');
+                const candidates = await res.json();
+                renderCandidates(candidates);
+            } catch (err) {
+                listDiv.innerHTML = '<div class="empty-state">Failed to load candidates.</div>';
+            }
+        }
+
+        async function searchCandidates() {
+            const q = document.getElementById('search-input').value.trim();
+
+            // Check if it looks like a skill search (comma-separated)
+            if (q.includes(',')) {
+                try {
+                    const res = await fetch('/api/search/skills?skills=' + encodeURIComponent(q));
+                    renderCandidates(await res.json());
+                } catch (err) { console.error(err); }
+                return;
+            }
+
+            try {
+                const url = q ? '/api/candidates?q=' + encodeURIComponent(q) : '/api/candidates';
+                const res = await fetch(url);
+                renderCandidates(await res.json());
+            } catch (err) { console.error(err); }
+        }
+
+        function handleSearch(ev) { if (ev.key === 'Enter') searchCandidates(); }
+
+        async function deleteCandidate(id) {
+            if (!confirm('Delete this candidate?')) return;
+            try {
+                await fetch('/api/candidates/' + id, { method: 'DELETE' });
+                loadCandidates();
+            } catch (err) { console.error(err); }
+        }
+
+        function renderCandidates(candidates) {
+            if (!candidates.length) {
+                listDiv.innerHTML = '<div class="empty-state">No candidates found. Upload a resume to get started!</div>';
+                return;
+            }
+
+            listDiv.innerHTML = candidates.map(c => `
+                <div class="candidate-card">
+                    <div class="candidate-header">
+                        <div>
+                            <div class="candidate-name">${esc(c.name || 'Unknown')}</div>
+                            <div class="candidate-meta">
+                                ${c.email ? '<span>📧 ' + esc(c.email) + '</span>' : ''}
+                                ${c.phone ? '<span>📱 ' + esc(c.phone) + '</span>' : ''}
+                                <span>📁 ${esc(c.filename)}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-danger" onclick="deleteCandidate(${c.id})">Delete</button>
+                    </div>
+
+                    ${c.skills.length ? `
+                        <div class="section-title">Skills</div>
+                        <div class="tags">
+                            ${c.skills.map(s => `<span class="tag ${s.category || ''}">${esc(s.name)}</span>`).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${c.education.length ? `
+                        <div class="section-title">Education</div>
+                        ${c.education.map(e => `
+                            <div class="edu-item">
+                                <span class="edu-degree">${esc(e.degree || '')}</span>
+                                ${e.institution ? ' — <span class="edu-institution">' + esc(e.institution) + '</span>' : ''}
+                                ${e.year ? ' <span class="exp-duration">(' + esc(e.year) + ')</span>' : ''}
+                            </div>
+                        `).join('')}
+                    ` : ''}
+
+                    ${c.experience.length ? `
+                        <div class="section-title">Experience</div>
+                        ${c.experience.map(e => `
+                            <div class="exp-item">
+                                <span class="exp-title">${esc(e.title || '')}</span>
+                                ${e.company ? ' at <span class="exp-company">' + esc(e.company) + '</span>' : ''}
+                                ${e.duration ? '<div class="exp-duration">' + esc(e.duration) + '</div>' : ''}
+                                ${e.description ? '<div class="exp-desc">' + esc(e.description) + '</div>' : ''}
+                            </div>
+                        `).join('')}
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function esc(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        // Load on page ready
+        loadCandidates();
+    </script>
+</body>
+</html>
