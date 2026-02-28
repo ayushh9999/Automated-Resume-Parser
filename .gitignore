@@ -4,6 +4,7 @@ __pycache__/
 .env
 uploads/
 venv/
+.venv/
 *.egg-info/
 dist/
 build/

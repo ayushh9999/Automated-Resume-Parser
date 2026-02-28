@@ -29,6 +29,47 @@ from app.extractor import extract_all     # Step 3: raw text → structured data
 api = Blueprint("api", __name__)
 
 
+def _normalize_email(value: str | None) -> str | None:
+    """Normalize email for consistent matching (trim + lowercase)."""
+    if not value:
+        return None
+    return value.strip().lower()
+
+
+def _normalize_phone(value: str | None) -> str | None:
+    """Normalize phone for matching by keeping only digits."""
+    if not value:
+        return None
+    digits = "".join(char for char in value if char.isdigit())
+    return digits or None
+
+
+def _find_existing_candidate(data: dict) -> Candidate | None:
+    """
+    Try to find an existing candidate so re-uploads update instead of duplicating.
+
+    Matching priority:
+        1) Email (most reliable)
+        2) Phone (normalized digits)
+    """
+    normalized_email = _normalize_email(data.get("email"))
+    if normalized_email:
+        existing = Candidate.query.filter(
+            db.func.lower(Candidate.email) == normalized_email
+        ).first()
+        if existing:
+            return existing
+
+    normalized_phone = _normalize_phone(data.get("phone"))
+    if normalized_phone:
+        candidates_with_phone = Candidate.query.filter(Candidate.phone.isnot(None)).all()
+        for candidate in candidates_with_phone:
+            if _normalize_phone(candidate.phone) == normalized_phone:
+                return candidate
+
+    return None
+
+
 def _allowed_file(filename: str) -> bool:
     """
     Check if the uploaded file has an allowed extension (PDF or DOCX).
@@ -102,17 +143,34 @@ def upload_resume():
         # This returns a dict with: name, email, phone, skills, education, experience
         data = extract_all(raw_text)
 
-        # --- Step 3: Save to database ---
-        # Create the main candidate record
-        candidate = Candidate(
-            name=data["name"],
-            email=data["email"],
-            phone=data["phone"],
-            filename=filename,
-            raw_text=raw_text,
-        )
-        db.session.add(candidate)
-        db.session.flush()  # Flush to get the auto-generated candidate.id
+        # --- Step 3: Save to database (upsert behavior) ---
+        # If the candidate already exists, update that row instead of creating a duplicate.
+        # Identity matching uses email first, then normalized phone.
+        candidate = _find_existing_candidate(data)
+        is_update = candidate is not None
+
+        if is_update:
+            candidate.name = data["name"] or candidate.name
+            candidate.email = data["email"] or candidate.email
+            candidate.phone = data["phone"] or candidate.phone
+            candidate.filename = filename
+            candidate.raw_text = raw_text
+
+            # Replace old extracted details with the latest resume content
+            candidate.skills.clear()
+            candidate.educations.clear()
+            candidate.experiences.clear()
+            db.session.flush()
+        else:
+            candidate = Candidate(
+                name=data["name"],
+                email=data["email"],
+                phone=data["phone"],
+                filename=filename,
+                raw_text=raw_text,
+            )
+            db.session.add(candidate)
+            db.session.flush()  # Flush to get the auto-generated candidate.id
 
         # Save each skill as a separate row linked to this candidate
         for skill in data["skills"]:
@@ -151,7 +209,17 @@ def upload_resume():
         db.session.commit()
 
         # Return the parsed candidate data as JSON
-        return jsonify({"message": "Resume parsed successfully", "candidate": candidate.to_dict()}), 201
+        if is_update:
+            return jsonify(
+                {
+                    "message": "Existing candidate updated successfully",
+                    "candidate": candidate.to_dict(),
+                }
+            ), 200
+
+        return jsonify(
+            {"message": "Resume parsed successfully", "candidate": candidate.to_dict()}
+        ), 201
 
     except Exception as e:
         # Something went wrong — undo all database changes
